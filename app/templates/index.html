@@ -126,6 +126,106 @@
 
         showStatus("Fetching captions...");
         let res = await fetch(
+          `https://youtube-downloader-a0r1.onrender.com/captions?url=${encodeURIComponent(url)}`
+        );
+        let data = await res.json();
+
+        let box = document.getElementById("captionsBox");
+        box.innerHTML = "";
+
+        data.captions.forEach((code) => {
+          box.innerHTML += `<label><input type="checkbox" value="${code}"> ${code}</label><br>`;
+        });
+
+        box.innerHTML += `<br><button onclick="downloadVideoWithCaptions()">Download With Selected Captions</button>`;
+      }
+
+      async function downloadVideo() {
+        const url = getUrl();
+        if (!url) return alert("Enter URL");
+
+        showStatus("Downloading...");
+        window.location = `https://youtube-downloader-a0r1.onrender.com/download-video?url=${encodeURIComponent(url)}`;
+      }
+
+      async function downloadVideoWithCaptions() {
+        const url = getUrl();
+        let langs = [...document.querySelectorAll("#captionsBox input:checked")]
+          .map((i) => i.value)
+          .join(",");
+        if (!langs) return alert("Select at least one caption.");
+
+        showStatus("Downloading video + captions...");
+        window.location = `https://youtube-downloader-a0r1.onrender.com/download-video-captions?url=${encodeURIComponent(url)}&langs=${langs}`;
+      }
+
+      async function loadPlaylistCaptions() {
+        const url = getUrl();
+        if (!url) return alert("Enter URL");
+
+        showStatus("Fetching captions for playlist...");
+        let res = await fetch(
+          `https://youtube-downloader-a0r1.onrender.com/playlist-captions?url=${encodeURIComponent(url)}`
+        );
+        let data = await res.json();
+
+        let box = document.getElementById("playlistCaptionsBox");
+        box.innerHTML = "";
+
+        data.captions.forEach((code) => {
+          box.innerHTML += `<label><input type="checkbox" value="${code}"> ${code}</label><br>`;
+        });
+
+        box.innerHTML += `<br><button onclick="downloadPlaylistWithCaptions()">Download Playlist With Selected Captions</button>`;
+      }
+
+      async function downloadPlaylist() {
+        const url = getUrl();
+        showStatus("Downloading playlist...");
+        window.location = `https://youtube-downloader-a0r1.onrender.com/download-playlist?url=${encodeURIComponent(url)}`;
+      }
+
+      async function downloadPlaylistWithCaptions() {
+        const url = getUrl();
+        let langs = [
+          ...document.querySelectorAll("#playlistCaptionsBox input:checked"),
+        ]
+          .map((i) => i.value)
+          .join(",");
+        if (!langs) return alert("Select at least one caption.");
+
+        showStatus("Downloading playlist + captions...");
+        window.location = `https://youtube-downloader-a0r1.onrender.com/download-playlist-captions?url=${encodeURIComponent(url)}&langs=${langs}`;
+      }
+
+      async function downloadMP3() {
+        const url = getUrl();
+        showStatus("Downloading MP3...");
+        window.location = `https://youtube-downloader-a0r1.onrender.com/download-mp3?url=${encodeURIComponent(url)}`;
+      }
+
+      async function downloadPlaylistMP3() {
+        const url = getUrl();
+        showStatus("Downloading playlist MP3...");
+        window.location = `https://youtube-downloader-a0r1.onrender.com/download-playlist-mp3?url=${encodeURIComponent(url)}`;
+      }
+    </script>
+
+    <!-- <script>
+      function getUrl() {
+        return document.getElementById("videoUrl").value.trim();
+      }
+
+      function showStatus(msg) {
+        document.getElementById("status").innerText = msg;
+      }
+
+      async function loadCaptions() {
+        const url = getUrl();
+        if (!url) return alert("Enter URL");
+
+        showStatus("Fetching captions...");
+        let res = await fetch(
           `http://localhost:8000/captions?url=${encodeURIComponent(url)}`
         );
         let data = await res.json();
@@ -209,6 +309,6 @@
         showStatus("Downloading playlist MP3...");
         window.location = `http://localhost:8000/download-playlist-mp3?url=${encodeURIComponent(url)}`;
       }
-    </script>
+    </script> -->
   </body>
 </html>
