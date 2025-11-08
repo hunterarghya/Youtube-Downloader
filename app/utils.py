@@ -120,25 +120,30 @@
 
 
 
-
 # import re
 # import io
 # from pytubefix import YouTube
 
+
 # class YTD:
 
 #     @staticmethod
-#     def clean_title(title):
+#     def clean_title(title: str) -> str:
+#         # remove illegal filename characters and replace spaces with underscores
 #         return re.sub(r'[\\/*?:"<>|]', "", title).replace(" ", "_")
 
 #     @staticmethod
-#     def list_captions(url):
+#     def list_captions(url: str):
+        
 #         yt = YouTube(url)
+#         # yt.captions is an iterable of caption objects
 #         return [c.code for c in yt.captions]
+    
 
 #     @staticmethod
-#     def stream_video(url):
+#     def stream_video(url: str):
 #         yt = YouTube(url)
+#         # lowest_res is intentional per your original logic
 #         stream = yt.streams.filter(file_extension="mp4").get_lowest_resolution()
 
 #         buffer = io.BytesIO()
@@ -148,9 +153,8 @@
 #         filename = YTD.clean_title(yt.title) + ".mp4"
 #         return buffer, filename
 
-
 #     @staticmethod
-#     def stream_mp3(url):
+#     def stream_mp3(url: str):
 #         yt = YouTube(url)
 #         stream = yt.streams.filter(only_audio=True).first()
 
@@ -162,21 +166,22 @@
 #         return buffer, filename
 
 #     @staticmethod
-#     def download_captions(url, langs):
+#     def download_captions(url: str, langs):
 #         yt = YouTube(url)
 #         results = []
+
 #         for lang in langs:
 #             cap = yt.captions.get_by_language_code(lang)
 #             if cap:
-#                 text = cap.generate_srt_captions()
+#                 try:
+#                     text = cap.generate_srt_captions()
+#                 except:
+#                     continue  # skip broken caption formats
+
 #                 name = YTD.clean_title(yt.title) + f".{lang}.srt"
 #                 results.append((name, text))
+
 #         return results
-
-
-
-
-
 
 
 
@@ -184,65 +189,93 @@
 
 import re
 import io
-from pytubefix import YouTube
+import subprocess
+import requests
+from yt_dlp import YoutubeDL
 
 
 class YTD:
 
     @staticmethod
     def clean_title(title: str) -> str:
-        # remove illegal filename characters and replace spaces with underscores
         return re.sub(r'[\\/*?:"<>|]', "", title).replace(" ", "_")
 
     @staticmethod
-    def list_captions(url: str):
-        try:
-            yt = YouTube(url)
-            # yt.captions is an iterable of caption objects
-            return [c.code for c in yt.captions]
-        except Exception as e:
-            return f"An error occured: {e}"
+    def _get_info(url: str):
+        ydl_opts = {"quiet": True}
+        with YoutubeDL(ydl_opts) as ydl:
+            return ydl.extract_info(url, download=False)
 
+    @staticmethod
+    def list_captions(url: str):
+        info = YTD._get_info(url)
+        subs = info.get("subtitles", {})
+        return list(subs.keys())
 
     @staticmethod
     def stream_video(url: str):
-        yt = YouTube(url)
-        # lowest_res is intentional per your original logic
-        stream = yt.streams.filter(file_extension="mp4").get_lowest_resolution()
+        info = YTD._get_info(url)
+
+        # Pick lowest resolution MP4
+        formats = [f for f in info["formats"] if f.get("ext") == "mp4" and f.get("height")]
+        fmt = sorted(formats, key=lambda x: x["height"])[0]
+        download_url = fmt["url"]
 
         buffer = io.BytesIO()
-        stream.stream_to_buffer(buffer)
+        r = requests.get(download_url, stream=True)
+        for chunk in r.iter_content(chunk_size=1024 * 256):
+            buffer.write(chunk)
         buffer.seek(0)
 
-        filename = YTD.clean_title(yt.title) + ".mp4"
+        filename = YTD.clean_title(info["title"]) + ".mp4"
         return buffer, filename
 
     @staticmethod
     def stream_mp3(url: str):
-        yt = YouTube(url)
-        stream = yt.streams.filter(only_audio=True).first()
+        info = YTD._get_info(url)
 
-        buffer = io.BytesIO()
-        stream.stream_to_buffer(buffer)
+        # Get best audio source
+        audio_fmt = info["formats"][-1]["url"]
+
+        # Stream → ffmpeg → MP3 buffer
+        process = subprocess.Popen(
+            ["ffmpeg", "-i", audio_fmt, "-vn", "-acodec", "libmp3lame", "-f", "mp3", "-"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL
+        )
+
+        buffer = io.BytesIO(process.stdout.read())
         buffer.seek(0)
 
-        filename = YTD.clean_title(yt.title) + ".mp3"
+        filename = YTD.clean_title(info["title"]) + ".mp3"
         return buffer, filename
 
     @staticmethod
     def download_captions(url: str, langs):
-        yt = YouTube(url)
+        info = YTD._get_info(url)
+        subs = info.get("subtitles", {})
         results = []
 
         for lang in langs:
-            cap = yt.captions.get_by_language_code(lang)
-            if cap:
-                try:
-                    text = cap.generate_srt_captions()
-                except:
-                    continue  # skip broken caption formats
+            if lang not in subs:
+                continue
 
-                name = YTD.clean_title(yt.title) + f".{lang}.srt"
-                results.append((name, text))
+            # Choose the first available caption source
+            cap_info = subs[lang][0]
+            cap_url = cap_info["url"]
+
+            # Convert to SRT through ffmpeg
+            process = subprocess.Popen(
+                ["ffmpeg", "-i", cap_url, "-f", "srt", "-"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL
+            )
+
+            srt_text = process.stdout.read().decode("utf-8", errors="ignore")
+            if not srt_text.strip():
+                continue
+
+            name = YTD.clean_title(info["title"]) + f".{lang}.srt"
+            results.append((name, srt_text))
 
         return results

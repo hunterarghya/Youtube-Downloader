@@ -16,3 +16,5 @@ pydantic
 jinja2
 requests
 gunicorn
+yt_dlp
+    
