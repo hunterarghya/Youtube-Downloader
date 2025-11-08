@@ -1,0 +1,18 @@
+# pytube
+# moviepy
+
+# fastapi
+# uvicorn
+# pydantic
+# jinja2
+# requests
+# gunicorn
+
+pytubefix
+moviepy
+fastapi
+uvicorn
+pydantic
+jinja2
+requests
+gunicorn

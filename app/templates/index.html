@@ -1,0 +1,214 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>YouTube Downloader</title>
+    <style>
+      body {
+        background: #111;
+        color: #d0d0d0;
+        font-family: Consolas, monospace;
+        padding: 40px;
+      }
+
+      h1,
+      h3 {
+        color: #98ff98;
+        margin-bottom: 15px;
+      }
+
+      input#videoUrl {
+        background: #000;
+        border: 2px solid #3aff3a;
+        color: #3aff3a;
+        padding: 10px;
+        width: 80%;
+        font-size: 16px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        outline: none;
+      }
+
+      input#videoUrl::placeholder {
+        color: #257c25;
+      }
+
+      /* Blinking cursor effect */
+      input#videoUrl {
+        caret-color: #3aff3a;
+      }
+
+      button {
+        background: #111;
+        border: 2px solid #3aff3a;
+        color: #3aff3a;
+        padding: 8px 14px;
+        margin: 6px 0;
+        border-radius: 5px;
+        cursor: pointer;
+        font-family: Consolas, monospace;
+        transition: 0.15s;
+      }
+
+      button:hover {
+        background: #3aff3a;
+        color: #111;
+        font-weight: bold;
+      }
+
+      hr {
+        border-color: #333;
+        margin: 25px 0;
+      }
+
+      #status {
+        margin-top: 20px;
+        padding: 12px;
+        background: #000;
+        border: 1px solid #333;
+        border-radius: 4px;
+        color: #a0ffa0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>YouTube Downloader</h1>
+
+    URL:
+    <input
+      type="text"
+      id="videoUrl"
+      size="60"
+      placeholder="Paste YouTube link here"
+    /><br /><br />
+
+    <h3>Download Video</h3>
+    <button onclick="loadCaptions()">Download Video With Captions</button>
+    <div id="captionsBox" style="margin: 10px 0"></div>
+    <button onclick="downloadVideo()">Download Video Without Captions</button>
+
+    <hr />
+
+    <h3>Download Playlist</h3>
+    <button onclick="loadPlaylistCaptions()">
+      Download Playlist With Captions
+    </button>
+    <div id="playlistCaptionsBox" style="margin: 10px 0"></div>
+    <button onclick="downloadPlaylist()">
+      Download Playlist Without Captions
+    </button>
+
+    <hr />
+
+    <h3>Download MP3</h3>
+    <button onclick="downloadMP3()">Download MP3</button>
+
+    <hr />
+
+    <h3>Download Playlist as MP3</h3>
+    <button onclick="downloadPlaylistMP3()">Download Playlist as MP3</button>
+
+    <hr />
+    <pre id="status">Status messages will appear here...</pre>
+
+    <script>
+      function getUrl() {
+        return document.getElementById("videoUrl").value.trim();
+      }
+
+      function showStatus(msg) {
+        document.getElementById("status").innerText = msg;
+      }
+
+      async function loadCaptions() {
+        const url = getUrl();
+        if (!url) return alert("Enter URL");
+
+        showStatus("Fetching captions...");
+        let res = await fetch(
+          `http://localhost:8000/captions?url=${encodeURIComponent(url)}`
+        );
+        let data = await res.json();
+
+        let box = document.getElementById("captionsBox");
+        box.innerHTML = "";
+
+        data.captions.forEach((code) => {
+          box.innerHTML += `<label><input type="checkbox" value="${code}"> ${code}</label><br>`;
+        });
+
+        box.innerHTML += `<br><button onclick="downloadVideoWithCaptions()">Download With Selected Captions</button>`;
+      }
+
+      async function downloadVideo() {
+        const url = getUrl();
+        if (!url) return alert("Enter URL");
+
+        showStatus("Downloading...");
+        window.location = `http://localhost:8000/download-video?url=${encodeURIComponent(url)}`;
+      }
+
+      async function downloadVideoWithCaptions() {
+        const url = getUrl();
+        let langs = [...document.querySelectorAll("#captionsBox input:checked")]
+          .map((i) => i.value)
+          .join(",");
+        if (!langs) return alert("Select at least one caption.");
+
+        showStatus("Downloading video + captions...");
+        window.location = `http://localhost:8000/download-video-captions?url=${encodeURIComponent(url)}&langs=${langs}`;
+      }
+
+      async function loadPlaylistCaptions() {
+        const url = getUrl();
+        if (!url) return alert("Enter URL");
+
+        showStatus("Fetching captions for playlist...");
+        let res = await fetch(
+          `http://localhost:8000/playlist-captions?url=${encodeURIComponent(url)}`
+        );
+        let data = await res.json();
+
+        let box = document.getElementById("playlistCaptionsBox");
+        box.innerHTML = "";
+
+        data.captions.forEach((code) => {
+          box.innerHTML += `<label><input type="checkbox" value="${code}"> ${code}</label><br>`;
+        });
+
+        box.innerHTML += `<br><button onclick="downloadPlaylistWithCaptions()">Download Playlist With Selected Captions</button>`;
+      }
+
+      async function downloadPlaylist() {
+        const url = getUrl();
+        showStatus("Downloading playlist...");
+        window.location = `http://localhost:8000/download-playlist?url=${encodeURIComponent(url)}`;
+      }
+
+      async function downloadPlaylistWithCaptions() {
+        const url = getUrl();
+        let langs = [
+          ...document.querySelectorAll("#playlistCaptionsBox input:checked"),
+        ]
+          .map((i) => i.value)
+          .join(",");
+        if (!langs) return alert("Select at least one caption.");
+
+        showStatus("Downloading playlist + captions...");
+        window.location = `http://localhost:8000/download-playlist-captions?url=${encodeURIComponent(url)}&langs=${langs}`;
+      }
+
+      async function downloadMP3() {
+        const url = getUrl();
+        showStatus("Downloading MP3...");
+        window.location = `http://localhost:8000/download-mp3?url=${encodeURIComponent(url)}`;
+      }
+
+      async function downloadPlaylistMP3() {
+        const url = getUrl();
+        showStatus("Downloading playlist MP3...");
+        window.location = `http://localhost:8000/download-playlist-mp3?url=${encodeURIComponent(url)}`;
+      }
+    </script>
+  </body>
+</html>
