@@ -1,6 +1,6 @@
 # YouTube Downloader
 
-A lightweight and simple tool to download YouTube content. Supports single videos, playlists, audio-only extraction, and subtitle download in SRT format.
+A lightweight and simple tool to download YouTube content. Supports single videos, playlists, audio-only extraction, and subtitle download in SRT format. Also includes a mobile application for better performance.
 
 ---
 
@@ -12,6 +12,7 @@ A lightweight and simple tool to download YouTube content. Supports single video
 - Download playlist as MP3
 - Download subtitles in SRT format (if available)
 - Minimal interface
+- Mobile application
 
 ## ⚙️ Tech Stack
 
@@ -20,6 +21,7 @@ A lightweight and simple tool to download YouTube content. Supports single video
 - **pytubefix** — For YouTube video processing
 - **Uvicorn** — ASGI web server
 - **Docker** — Containerization and deployment
+- **Kivy** — Building mobile application
 
 ---
 
@@ -66,6 +68,17 @@ Then open your browser at:
 ```bash
 docker build -t ytvd .
 docker run -d -p 8000:8000 ytvd
+```
+
+---
+
+## 🚀 Run the app
+
+### Go to the mobapp folder and run the app
+
+```bash
+cd mobapp
+python main.py
 ```
 
 ---

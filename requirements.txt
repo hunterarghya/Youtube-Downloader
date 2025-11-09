@@ -17,4 +17,6 @@ jinja2
 requests
 gunicorn
 yt_dlp
-    
+
+ffmpeg-python>=0.2.0
+kivy>=2.3.0
