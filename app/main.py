@@ -13,19 +13,13 @@ app = FastAPI()
 templates = Jinja2Templates(directory="app/templates")
 
 
-app.add_middleware( 
+
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["*"],
-#     allow_methods=["*"],
-#     allow_headers=["*"]
-# )
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
