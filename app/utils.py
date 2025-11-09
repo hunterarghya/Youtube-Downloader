@@ -135,14 +135,14 @@ class YTD:
     @staticmethod
     def list_captions(url: str):
         
-        yt = YouTube(url, client="WEB_EMBED")
+        yt = YouTube(url)
         # yt.captions is an iterable of caption objects
         return [c.code for c in yt.captions]
     
 
     @staticmethod
     def stream_video(url: str):
-        yt = YouTube(url, client="WEB_EMBED")
+        yt = YouTube(url)
         # lowest_res is intentional per your original logic
         stream = yt.streams.filter(file_extension="mp4").get_lowest_resolution()
 
@@ -155,7 +155,7 @@ class YTD:
 
     @staticmethod
     def stream_mp3(url: str):
-        yt = YouTube(url, client="WEB_EMBED")
+        yt = YouTube(url)
         stream = yt.streams.filter(only_audio=True).first()
 
         buffer = io.BytesIO()
@@ -167,7 +167,7 @@ class YTD:
 
     @staticmethod
     def download_captions(url: str, langs):
-        yt = YouTube(url, client="WEB_EMBED")
+        yt = YouTube(url)
         results = []
 
         for lang in langs:
